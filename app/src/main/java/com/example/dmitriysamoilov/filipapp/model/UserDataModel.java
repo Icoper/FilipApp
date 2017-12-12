@@ -9,6 +9,16 @@ public class UserDataModel {
     private String username;
     private String password;
 
+    String token_type;
+    String expires_in;
+    String access_token;
+    String refresh_token;
+
+    public UserDataModel(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
     public UserDataModel(String grant_type, String client_id, String client_secret, String username, String password) {
         this.grant_type = grant_type;
         this.client_id = client_id;
@@ -55,5 +65,37 @@ public class UserDataModel {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getToken_type() {
+        return token_type;
+    }
+
+    public void setToken_type(String token_type) {
+        this.token_type = token_type;
+    }
+
+    public String getExpires_in() {
+        return expires_in;
+    }
+
+    public void setExpires_in(String expires_in) {
+        this.expires_in = expires_in;
+    }
+
+    public String getAccess_token() {
+        return access_token;
+    }
+
+    public void setAccess_token(String access_token) {
+        this.access_token = access_token;
+    }
+
+    public String getRefresh_token() {
+        return refresh_token;
+    }
+
+    public void setRefresh_token(String refresh_token) {
+        this.refresh_token = refresh_token;
     }
 }

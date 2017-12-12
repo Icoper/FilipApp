@@ -1,21 +1,24 @@
 package com.example.dmitriysamoilov.filipapp.api;
 
+import com.example.dmitriysamoilov.filipapp.model.UserContactListModel;
 import com.example.dmitriysamoilov.filipapp.model.UserDataModel;
+
 
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.Header;
 import retrofit2.http.POST;
-import retrofit2.http.Query;
 
 
 public interface Server {
 
-    @POST("oauth/token")
+    @POST("/oauth/token")
     Call <UserDataModel> user(@Body UserDataModel user);
 
-    @GET("api/user")
-    Call <UserDataModel> userTocen(@Query("client_secret") String token);
+    @GET("/api/contacts")
+    Call<List<UserContactListModel>> getUserContacts(@Header("Authorization") String token);
+
 }
