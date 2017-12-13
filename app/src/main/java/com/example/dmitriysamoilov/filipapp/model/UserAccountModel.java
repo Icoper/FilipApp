@@ -1,9 +1,13 @@
 package com.example.dmitriysamoilov.filipapp.model;
 
 
+import com.example.dmitriysamoilov.filipapp.keys.UserJsonKeys;
 import com.google.gson.annotations.SerializedName;
 
-public class UserAccountModel {
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class UserAccountModel implements UserJsonKeys {
 
     @SerializedName("id")
     public String id;
@@ -138,5 +142,49 @@ public class UserAccountModel {
     public String is_online;
 
     public UserAccountModel() {
+    }
+
+    public UserAccountModel(JSONObject obj) throws JSONException {
+        id = obj.getString(ACC_ID);
+        name = obj.getString(ACC_NAME);
+        lastname = obj.getString(ACC_LAST_NAME);
+        email = obj.getString(ACC_EMAIL);
+        type = obj.getString(ACC_TYPE);
+        balance = ""; // No 'balance' and 'uid' in json
+        birthday = obj.getString(ACC_BIRTHDAY);
+        activated = obj.getString(ACC_ACTIVATED);
+        parent = "";
+        invite = "";
+        notification = "";
+        banner = "";
+        belongs = "";
+        avatar = obj.getString(ACC_AVATAR);
+        cc_1 = obj.getString(ACC_CC_1);
+        cc_2 = obj.getString(ACC_CC_2);
+        num_1 = obj.getString(ACC_NUM_1);
+        num_2 = obj.getString(ACC_NUM_2);
+        created_at = obj.getString(ACC_CREATED_AT);
+        updated_at = obj.getString(ACC_UPDATED_AT);
+        role_id = obj.getString(ACC_ROLE_ID);
+        level = "";
+        gender = obj.getString(ACC_GENDER);
+        confirmed = obj.getString(ACC_CONFIRMED);
+        time = "";
+        number = "";
+        note_type = "";
+        note_till = "";
+        note = "";
+        online = obj.getString(ACC_ONLINE);
+        online_last = obj.getString(ACC_ONLINE_LAST);
+        lang = "";
+        last_activity = obj.getString(ACC_LAST_ACT);
+        link = obj.getString(ACC_LINK);
+        href = obj.getString(ACC_HREF);
+        available_number = obj.getString(ACC_AVAILABLE_NUM);
+        full_name = obj.getString(ACC_FULL_NAME);
+        phone = obj.getString(ACC_PHONE);
+        phone_privacy = obj.getString(ACC_PHONE_PRIVACY);
+        computer_note = "";
+        is_online = obj.getString(ACC_IS_ONLINE);
     }
 }

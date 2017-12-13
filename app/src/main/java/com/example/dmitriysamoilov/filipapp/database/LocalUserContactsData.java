@@ -15,7 +15,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import retrofit2.Call;
@@ -51,22 +50,31 @@ public class LocalUserContactsData extends ReservedName {
     public List<UserContactListModel> getUserLocalContactsData() {
         List<UserContactListModel> listModels = new ArrayList<>();
         sharedPreferences = context.getSharedPreferences(ReservedName.USER_LOCAL_CONTACTS_DATA,
-                context.MODE_PRIVATE);
+                Context.MODE_PRIVATE);
 
-        if (sharedPreferences.contains(spName)) {
-            String res = sharedPreferences.getString("json", "");
-            try {
-                JSONObject jsonObject = new JSONObject(res);
-                JSONArray jsonArray = jsonObject.getJSONArray("value");
-                Iterator x = jsonObject.keys();
-                while (x.hasNext()) {
-                    String key = (String) x.next();
+        String res = sharedPreferences.getString("json", "");
+        try {
+            JSONArray arr = new JSONArray(res);
 
-                }
-            } catch (JSONException e) {
-                Log.d(LOG_TAG, e.getMessage());
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject obj = arr.getJSONObject(i);
+                UserContactListModel model = new UserContactListModel(obj);
+                listModels.add(model);
             }
+        } catch (JSONException e) {
+            Log.e(LOG_TAG, "Error parsing JSON: ", e);
         }
+//        try {
+//            JSONObject jsonObject = new JSONObject(res);
+//            JSONArray jsonArray = jsonObject.getJSONArray("value");
+//            Iterator x = jsonObject.keys();
+//            while (x.hasNext()) {
+//                String key = (String) x.next();
+//
+//            }
+//        } catch (JSONException e) {
+//            Log.d(LOG_TAG, e.getMessage());
+//        }
         return listModels;
     }
 

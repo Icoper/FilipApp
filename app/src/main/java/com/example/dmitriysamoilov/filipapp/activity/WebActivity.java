@@ -14,6 +14,9 @@ import com.example.dmitriysamoilov.filipapp.MyWebViewClient;
 import com.example.dmitriysamoilov.filipapp.R;
 import com.example.dmitriysamoilov.filipapp.ReservedName;
 import com.example.dmitriysamoilov.filipapp.database.LocalUserContactsData;
+import com.example.dmitriysamoilov.filipapp.model.UserContactListModel;
+
+import java.util.List;
 
 
 public class WebActivity extends AppCompatActivity {
@@ -60,9 +63,11 @@ public class WebActivity extends AppCompatActivity {
         if (preferences.contains(ReservedName.USER_TOKEN_NAME)) {
             enterToken = preferences.getString(ReservedName.USER_TOKEN_NAME, "");
             // Обновляем наши контакты
-            new LocalUserContactsData(getApplicationContext())
-                    .saveUserFriendData(preferences
-                            .getString(ReservedName.USER_TOKEN_NAME, ""));
+            LocalUserContactsData lucd = new LocalUserContactsData(getApplicationContext());
+            lucd.saveUserFriendData(preferences.getString(ReservedName.USER_TOKEN_NAME, ""));
+
+            List<UserContactListModel> list = lucd.getUserLocalContactsData();
+
             showWeb();
         } else {
             startActivity(new Intent(WebActivity.this, LoginActivity.class));
