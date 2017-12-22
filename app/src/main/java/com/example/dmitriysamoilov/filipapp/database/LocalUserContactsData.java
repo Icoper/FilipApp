@@ -15,6 +15,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import retrofit2.Call;
@@ -50,9 +51,10 @@ public class LocalUserContactsData extends ReservedName {
     public List<UserContactListModel> getUserLocalContactsData() {
         List<UserContactListModel> listModels = new ArrayList<>();
         sharedPreferences = context.getSharedPreferences(ReservedName.USER_LOCAL_CONTACTS_DATA,
-                Context.MODE_PRIVATE);
+                context.MODE_PRIVATE);
 
         String res = sharedPreferences.getString("json", "");
+
         try {
             JSONArray arr = new JSONArray(res);
 
@@ -64,17 +66,6 @@ public class LocalUserContactsData extends ReservedName {
         } catch (JSONException e) {
             Log.e(LOG_TAG, "Error parsing JSON: ", e);
         }
-//        try {
-//            JSONObject jsonObject = new JSONObject(res);
-//            JSONArray jsonArray = jsonObject.getJSONArray("value");
-//            Iterator x = jsonObject.keys();
-//            while (x.hasNext()) {
-//                String key = (String) x.next();
-//
-//            }
-//        } catch (JSONException e) {
-//            Log.d(LOG_TAG, e.getMessage());
-//        }
         return listModels;
     }
 

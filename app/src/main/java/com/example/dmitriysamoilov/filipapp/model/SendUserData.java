@@ -1,7 +1,7 @@
 package com.example.dmitriysamoilov.filipapp.model;
 
 
-public class UserDataModel {
+public class SendUserData {
 
     private String grant_type;
     private String client_id;
@@ -14,12 +14,12 @@ public class UserDataModel {
     String access_token;
     String refresh_token;
 
-    public UserDataModel(String username, String password) {
+    public SendUserData(String username, String password) {
         this.username = username;
         this.password = password;
     }
 
-    public UserDataModel(String grant_type, String client_id, String client_secret, String username, String password) {
+    public SendUserData(String grant_type, String client_id, String client_secret, String username, String password) {
         this.grant_type = grant_type;
         this.client_id = client_id;
         this.client_secret = client_secret;
