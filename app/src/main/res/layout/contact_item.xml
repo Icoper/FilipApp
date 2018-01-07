@@ -4,10 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
+    android:background="@drawable/list_item_border"
     xmlns:tools="http://schemas.android.com/tools">
 
     <CheckBox
-        android:checked="true"
         android:id="@+id/ci_checkBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />

@@ -14,6 +14,11 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+
+    // ContactActivity
+    <string name="do_import">Import</string>
+    <string name="do_cancel">Cancel</string>
+    <string name="select_unselect">Select/unselect all</string>
     // LoginActivity
     <string name="register_btn">Register</string>
     <string name="wrong_data">"Incorrect email or password"</string>
@@ -35,12 +40,16 @@
     // AlertDialog on loginActivity
     <string name="send_contacts">Want to add contacts from your phone book to the resource?</string>
     <string name="title_activity_web2">WebActivity2</string>
+    // Use this string to AES key encrypt
+    <string name="error_0">nQzpNLAuzc44IaHPdhKeiBqnIsW5dPhKUs2pz296</string>
     // Navigation Drawer
     <string name="import_contacts">Import</string>
     <string name="logout">Logout</string>
     <string name="communicate">Communicate</string>
     <string name="read_contact">This app needs access to your contacts.</string>
     <string name="header_title">Navigation</string>
+    <string name="nav_track">Track</string>
+    <string name="nav_connect">Connect</string>
 
     //WebActivity
     <string name="app_not_install">You may need install this app first</string>

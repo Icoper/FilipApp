@@ -1,10 +1,14 @@
 package com.example.dmitriysamoilov.filipapp.activity;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +21,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,7 +51,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class PhoneBookActivity extends AppCompatActivity implements View.OnClickListener, EasyPermissions.PermissionCallbacks {
-    private static final String SERVER_URL = "http://taxiservice-gronau.de";
     private static final String LOG_TAG = "PhoneBookActivity";
     private static final int REQUEST_CONTACTS = 101;
 
@@ -55,7 +59,9 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
 
     private ListView listView;
     private Button sendContacts;
-    private Button cansel;
+    private Button cancel;
+    private CheckBox selectorCB;
+    private ProgressBar progressBar;
     private boolean contactReadPermission = false;
 
     @Override
@@ -63,28 +69,56 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contacts);
 
-
         // initialize view elements
+        selectorCB = (CheckBox) findViewById(R.id.ca_checkBox);
+        selectorCB.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                progressBar.setVisibility(View.VISIBLE);
+                if (b) {
+                    for (int i = 0; i < allContacts.size(); i++) {
+                        allContacts.get(i).setChecked(true);
+                    }
+
+                } else {
+                    for (int i = 0; i < allContacts.size(); i++) {
+                        allContacts.get(i).setChecked(false);
+                    }
+                }
+                contactAdapter = new ContactAdapter(PhoneBookActivity.this, allContacts);
+                listView.setAdapter(contactAdapter);
+                progressBar.setVisibility(View.INVISIBLE);
+            }
+        });
+
+        sendContacts = (Button) findViewById(R.id.ca_confirmBtn);
+        cancel = (Button) findViewById(R.id.ca_cancel);
+        progressBar = (ProgressBar) findViewById(R.id.ca_progress_bar);
+        progressBar.setVisibility(View.VISIBLE);
+
+        sendContacts.setOnClickListener(this);
+        cancel.setOnClickListener(this);
+
+        setupListView();
+
+    }
+
+    private void setupListView() {
 
         if (contactReadPermission || EasyPermissions.hasPermissions(this, Manifest.permission.READ_CONTACTS)) {
-            allContacts = new UserPhoneBookData(this).getPhoneBook();
-            contactAdapter = new ContactAdapter(this, allContacts);
+            progressBar.setVisibility(View.VISIBLE);
             listView = (ListView) findViewById(R.id.ca_listView);
-            listView.setAdapter(contactAdapter);
+
+            LoadContactsToListView longTask = new LoadContactsToListView();
+            longTask.execute();
+
         } else {
             Toast.makeText(PhoneBookActivity.this, getString(R.string.read_contact), Toast.LENGTH_SHORT).show();
             EasyPermissions.requestPermissions(this, getString(R.string.read_contact), REQUEST_CONTACTS, Manifest.permission.READ_CONTACTS);
         }
 
-
-        sendContacts = (Button) findViewById(R.id.ca_confirmBtn);
-        cansel = (Button) findViewById(R.id.ca_cancel);
-
-        sendContacts.setOnClickListener(this);
-        cansel.setOnClickListener(this);
-
-
     }
+
 
     @Override
     public void onClick(View view) {
@@ -94,12 +128,12 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
             case R.id.ca_confirmBtn:
                 sendUserPhoneBook();
                 break;
-
             case R.id.ca_cancel:
                 Intent intent = new Intent(PhoneBookActivity.this, WebActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intent);
                 break;
+
         }
     }
 
@@ -130,7 +164,7 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
                 .create();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(SERVER_URL) // Адрес сервера
+                .baseUrl(ReservedName.SERVER_URL) // Адрес сервера
                 .addConverterFactory(GsonConverterFactory.create(gson)) // говорим ретрофиту что для сериализации необходимо использовать GSON
                 .client(httpClient.build())
                 .build();
@@ -157,9 +191,9 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
 
         Toast.makeText(PhoneBookActivity.this, getString(R.string.action_ok), Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(PhoneBookActivity.this, WebActivity.class);
-        intent.putExtra(ReservedName.USER_TOKEN_NAME, access_token);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        intent.putExtra("Url", ReservedName.SERVER_URL + "/connect/directly/all");
         startActivity(intent);
-
     }
 
     @Override
@@ -197,6 +231,11 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         }
 
+        @Override
+        public void notifyDataSetChanged() {
+            super.notifyDataSetChanged();
+        }
+
         // кол-во элементов
         @Override
         public int getCount() {
@@ -225,10 +264,10 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
             }
 
             PhoneContactModel p = contactListView.get(position);
-
             ((TextView) view.findViewById(R.id.ci_name)).setText(p.getName());
 
-            final CheckBox cbBuy = (CheckBox) view.findViewById(R.id.ci_checkBox);
+            CheckBox cbBuy = (CheckBox) view.findViewById(R.id.ci_checkBox);
+            cbBuy.setChecked(p.isChecked);
             // присваиваем чекбоксу обработчик
             cbBuy.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
@@ -240,9 +279,29 @@ public class PhoneBookActivity extends AppCompatActivity implements View.OnClick
             return view;
         }
 
+
         public ArrayList<PhoneContactModel> getList() {
             return contactListView;
         }
 
     }
+
+    class LoadContactsToListView extends AsyncTask<Void, Void, ArrayList<PhoneContactModel>> {
+
+        @Override
+        protected ArrayList<PhoneContactModel> doInBackground(Void... noargs) {
+            return new UserPhoneBookData(PhoneBookActivity.this).getPhoneBook();
+        }
+
+        @Override
+        protected void onPostExecute(ArrayList<PhoneContactModel> list) {
+            allContacts = list;
+            contactAdapter = new ContactAdapter(PhoneBookActivity.this, allContacts);
+            listView.setAdapter(contactAdapter);
+            progressBar.setVisibility(View.INVISIBLE);
+
+
+        }
+    }
+
 }

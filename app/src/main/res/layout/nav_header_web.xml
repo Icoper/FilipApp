@@ -3,8 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/colorGrey"
     android:theme="@style/ThemeOverlay.AppCompat.Dark">
 
     <RelativeLayout
@@ -21,66 +22,122 @@
             android:layout_gravity="start"
             android:layout_marginStart="11dp"
             android:text="@string/header_title"
-            android:textSize="18sp" />
+            android:textColor="@color/textColor"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/nv_close_panel"
-            android:layout_width="35dp"
-            android:layout_height="35dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_gravity="center"
             android:layout_marginEnd="11dp"
-            android:background="@drawable/ic_close_white_24dp" />
+            android:background="@drawable/app_icon_close" />
 
     </RelativeLayout>
 
     <LinearLayout
-        android:background="@drawable/list_item_border"
-        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@drawable/list_item_border"
+        android:orientation="horizontal">
 
         <de.hdodenhof.circleimageview.CircleImageView
-            app:civ_border_width="2dp"
-            app:civ_border_color="@color/textColor"
-            tools:background="@drawable/di_avatar_male"
-            android:scaleType="centerCrop"
+            android:layout_marginLeft="4dp"
+            android:layout_marginBottom="4dp"
+            android:layout_marginTop="4dp"
             android:id="@+id/nav_header_pic"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
             android:layout_gravity="center"
-            android:paddingTop="@dimen/nav_header_vertical_spacing" />
+            android:scaleType="centerCrop"
+            app:civ_border_color="@color/textColor"
+            app:civ_border_width="2dp"
+            tools:background="@drawable/di_avatar_male" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="8dp">
 
             <TextView
                 android:id="@+id/nav_header_name"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textSize="16sp"
+                android:layout_height="match_parent"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:singleLine="true"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
-                tools:text="User Name" />
+                android:textSize="16sp"
+                tools:text="User Name11" />
 
             <TextView
                 android:id="@+id/nav_header_email"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="16sp"
-                android:gravity="center"
+                android:ellipsize="end"
+                android:gravity="start"
+                android:maxLines="1"
                 android:paddingTop="@dimen/nav_header_vertical_spacing"
+                android:singleLine="true"
                 android:text="@string/app_name"
                 android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+                android:textSize="16sp"
                 tools:text="email@email.com" />
 
 
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="80dp"
+        android:layout_gravity="center"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/ll_nav_connect"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:padding="15dp"
+            android:background="@drawable/nav_butt_border"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/nav_connect"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/app_icon_connect" />
+        </LinearLayout>
+
+        <TextView
+            android:background="@color/textColor"
+            android:layout_width="0.5dp"
+            android:layout_height="match_parent" />
+
+        <LinearLayout
+            android:id="@+id/ll_nav_track"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="3"
+            android:padding="15dp"
+            android:background="@drawable/nav_butt_border"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/nav_tract"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_gravity="center"
+                android:background="@drawable/app_icon_track" />
         </LinearLayout>
 
     </LinearLayout>

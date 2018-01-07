@@ -19,15 +19,23 @@ public class UserModel {
     @SerializedName("gender")
     String gender;
 
-    public UserModel(String full_name, String email, String avatar, String gender) {
+    @SerializedName("link")
+    String link;
+
+    String token;
+
+    public UserModel(String full_name, String email, String avatar, String gender, String link, String token) {
         this.gender = gender;
         this.full_name = full_name;
         this.email = email;
         this.avatar = avatar;
+        this.link = link;
+        this.token = token;
     }
 
     public UserModel() {
     }
+
 
     public String getGender() {
         return gender;
@@ -59,5 +67,21 @@ public class UserModel {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public String getLink() {
+        return link;
+    }
+
+    public void setLink(String link) {
+        this.link = link;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

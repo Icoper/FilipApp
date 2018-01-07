@@ -69,7 +69,7 @@ public class UserPhoneBookData {
                 // if the user user has an email or phone then add it to contacts
                 if ((!TextUtils.isEmpty(email) && android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
                         && !email.equalsIgnoreCase(name)) || (!TextUtils.isEmpty(phone))) {
-                    PhoneContactModel contact = new PhoneContactModel(name, email, phone, "", true);
+                    PhoneContactModel contact = new PhoneContactModel(name, email, phone, "", false);
                     phoneBookDataList.add(contact);
                 }
 

@@ -6,7 +6,7 @@ public class PhoneContactModel {
     public String email;
     public String number;
     public String lastname;
-    public boolean isChecked = true;
+    public boolean isChecked;
 
 
     public PhoneContactModel(String name, String email, String phoneNumber, String lastname, boolean isChecked) {

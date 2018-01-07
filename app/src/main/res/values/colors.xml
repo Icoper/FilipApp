@@ -7,5 +7,7 @@
     <color name="colorBlue">#087cfc</color>
     <color name="colorGreyLight">#414140</color>
     <color name="textColor">#cecccc</color>
+    <color name="colorBlack">#000000</color>
+    <color name="colorRed">#e90707</color>
 
 </resources>

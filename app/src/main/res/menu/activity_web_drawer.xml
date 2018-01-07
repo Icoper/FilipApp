@@ -3,7 +3,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:showIn="navigation_view">
 
-
     <item
         android:id="@+id/nav_import_contact"
         android:icon="@android:drawable/sym_call_outgoing"

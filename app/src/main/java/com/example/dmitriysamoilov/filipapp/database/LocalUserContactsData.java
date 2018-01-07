@@ -26,7 +26,6 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class LocalUserContactsData extends ReservedName {
-    private static final String SERVER_URL = "http://taxiservice-gronau.de";
     private static final String LOG_TAG = "LocUsContData";
     private SharedPreferences sharedPreferences;
     private Context context;

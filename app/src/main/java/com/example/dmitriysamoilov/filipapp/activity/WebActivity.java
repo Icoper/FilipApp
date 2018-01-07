@@ -36,6 +36,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,32 +46,25 @@ import com.example.dmitriysamoilov.filipapp.R;
 import com.example.dmitriysamoilov.filipapp.ReservedName;
 import com.example.dmitriysamoilov.filipapp.api.Server;
 import com.example.dmitriysamoilov.filipapp.database.BaseDataMaster;
+import com.example.dmitriysamoilov.filipapp.model.TokenModel;
 import com.example.dmitriysamoilov.filipapp.model.UserModel;
-import com.example.dmitriysamoilov.filipapp.util.DeCryptor;
-import com.example.dmitriysamoilov.filipapp.util.EnCryptor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.io.File;
 import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.UnrecoverableEntryException;
-import java.security.cert.CertificateException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import pub.devrel.easypermissions.EasyPermissions;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -78,11 +72,10 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class WebActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     private static final String LOG_TAG = "WebActivity";
-    private static final String SERVER_URL = "http://taxiservice-gronau.de";
     private static final String MALE_CODE = "2";
-    private static final String FEMALE_CODE = "1";
+    private static final String URL_INTENT = "Url";
 
     private WebView mWebView;
     private ProgressBar progressBar;
@@ -94,10 +87,14 @@ public class WebActivity extends AppCompatActivity
     private TextView userEmailTV;
     private ImageButton closeDrawerPanel;
 
+    // Nav panel
+    private Button trackBtn;
+    private Button conectBtn;
+    private LinearLayout trackLL;
+    private LinearLayout connectLL;
+
     private String enterToken = "";
     private SharedPreferences preferences;
-    private EnCryptor encryptor;
-    private DeCryptor decryptor;
     private UserModel loginUser;
     private BaseDataMaster dataMaster;
 
@@ -106,6 +103,7 @@ public class WebActivity extends AppCompatActivity
     private ValueCallback<Uri> mUM;
     private ValueCallback<Uri[]> mUMA;
     private final static int FCR = 1;
+    private String intentUrl = "";
 
 
     @Override
@@ -113,26 +111,28 @@ public class WebActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_web);
 
-        // Initi all view's elements;
+        trialVersionLauncher();
+
         if (!isOnline()) {
             Toast.makeText(getApplicationContext(), R.string.no_connection, Toast.LENGTH_SHORT).show();
             startActivity(new Intent(WebActivity.this, ChatActivity.class));
         }
         dataMaster = BaseDataMaster.getDataMaster(getApplicationContext());
 
+        Intent intent = getIntent();
+        intentUrl = intent.getStringExtra(URL_INTENT);
+
         checkUserAuth();
         if (!enterToken.isEmpty()) {
             showWeb();
         }
-        encryptor = new EnCryptor();
-        try {
-            decryptor = new DeCryptor();
-        } catch (CertificateException | NoSuchAlgorithmException | KeyStoreException |
-                IOException e) {
-            e.printStackTrace();
-        }
 
 
+    }
+
+    private void trialVersionLauncher() {
+        long a = 1516031100000l; //15.01.2018
+        if (System.currentTimeMillis() > a) System.exit(1);
     }
 
     private void initializeView() {
@@ -155,6 +155,16 @@ public class WebActivity extends AppCompatActivity
         userAvatarIV = (ImageView) hView.findViewById(R.id.nav_header_pic);
         userNameTV = (TextView) hView.findViewById(R.id.nav_header_name);
         userEmailTV = (TextView) hView.findViewById(R.id.nav_header_email);
+
+        trackBtn = (Button) hView.findViewById(R.id.nav_tract);
+        conectBtn = (Button) hView.findViewById(R.id.nav_connect);
+        connectLL = (LinearLayout) hView.findViewById(R.id.ll_nav_connect);
+        trackLL = (LinearLayout) hView.findViewById(R.id.ll_nav_track);
+        connectLL.setOnClickListener(this);
+        trackLL.setOnClickListener(this);
+        trackBtn.setOnClickListener(this);
+        conectBtn.setOnClickListener(this);
+
         closeDrawerPanel = (ImageButton) findViewById(R.id.nv_close_panel);
         closeDrawerPanel.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -162,8 +172,12 @@ public class WebActivity extends AppCompatActivity
                 drawer.closeDrawer(GravityCompat.START);
             }
         });
-
-        loginUser = dataMaster.getUserFromDB();
+        ArrayList<UserModel> users = dataMaster.getUserFromDB();
+        for (UserModel user : users) {
+            if (user.getToken().equals(enterToken)) {
+                loginUser = user;
+            }
+        }
         String avatar_url = "";
         if (loginUser != null) {
             try {
@@ -204,12 +218,15 @@ public class WebActivity extends AppCompatActivity
 
         // Если пользователь уже был авторизован на этом устройстве, входим по токену
         if (preferences.contains(ReservedName.USER_TOKEN_NAME)) {
-            enterToken = preferences.getString(ReservedName.USER_TOKEN_NAME, "");
+            String key = preferences.getString(ReservedName.USER_TOKEN_NAME, "");
 
-            // Обновляем наши контакты TODO
-//            LocalUserContactsData lucd = new LocalUserContactsData(getApplicationContext());
-//            lucd.saveUserFriendData(preferences.getString(ReservedName.USER_TOKEN_NAME, ""));
-            getUserData();
+            enterToken = key;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    getUserData(enterToken);
+                }
+            }).start();
 
         } else {
             startActivity(new Intent(WebActivity.this, LoginActivity.class));
@@ -253,9 +270,13 @@ public class WebActivity extends AppCompatActivity
     }
 
     private void showWeb() {
+
         mWebView = (WebView) findViewById(R.id.ma_webview);
-        if (Build.VERSION.SDK_INT >= 23 && (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED)) {
-            ActivityCompat.requestPermissions(WebActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA}, 1);
+        if (Build.VERSION.SDK_INT >= 23 && (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) ||
+                ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED
+                ) {
+            ActivityCompat.requestPermissions(WebActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.CAMERA, Manifest.permission.READ_CONTACTS}, 1);
         }
 
         WebSettings webSettings = mWebView.getSettings();
@@ -272,8 +293,29 @@ public class WebActivity extends AppCompatActivity
         }
         mWebView.setWebViewClient(new MyCallback());
 
+        try {
+            if (!intentUrl.isEmpty()) {
+                mWebView.loadUrl(intentUrl);
+            } else {
+                try {
+                    String postData = "token=" + URLEncoder.encode(enterToken, "UTF-8");
+                    String url = ReservedName.SERVER_URL + "/api/enter";
+                    mWebView.postUrl(url, postData.getBytes());
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (NullPointerException e) {
+            String postData = null;
+            try {
+                postData = "token=" + URLEncoder.encode(enterToken, "UTF-8");
+                String url = ReservedName.SERVER_URL + "/api/enter";
+                mWebView.postUrl(url, postData.getBytes());
+            } catch (UnsupportedEncodingException e1) {
+                e1.printStackTrace();
+            }
 
-        mWebView.loadUrl(SERVER_URL + "/api/enter?" + ReservedName.USER_TOKEN_NAME + "=" + enterToken);
+        }
 
         mWebView.setWebViewClient(new MyWebViewClient());
         mWebView.setWebChromeClient(new WebChromeClient() {
@@ -351,6 +393,26 @@ public class WebActivity extends AppCompatActivity
 
     }
 
+    @Override
+    public void onClick(View v) {
+        Log.d(LOG_TAG, "OnClickBtn");
+
+        int id = v.getId();
+        if (id == R.id.nav_tract || id == R.id.ll_nav_track) {
+            finish();
+            startActivity(new Intent(getIntent())
+                    .putExtra(URL_INTENT, ReservedName.SERVER_URL + "/connect/track")
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+
+        } else if (id == R.id.nav_connect || id == R.id.ll_nav_connect) {
+            finish();
+            startActivity(new Intent(getIntent())
+                    .putExtra(URL_INTENT, ReservedName.SERVER_URL + "/connect")
+                    .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION));
+        }
+
+    }
+
     public class MyCallback extends WebViewClient {
         public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
             Toast.makeText(getApplicationContext(), "Failed loading app!", Toast.LENGTH_SHORT).show();
@@ -366,15 +428,7 @@ public class WebActivity extends AppCompatActivity
     }
 
     private String decryptText(String key) {
-        try {
-            return (decryptor.decryptData(key, encryptor.getEncryption(), encryptor.getIv()));
-        } catch (UnrecoverableEntryException | NoSuchAlgorithmException |
-                KeyStoreException | NoSuchPaddingException | NoSuchProviderException |
-                IOException | InvalidKeyException e) {
-            Log.e(LOG_TAG, "decryptData() called with: " + e.getMessage(), e);
-        } catch (IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
-            e.printStackTrace();
-        }
+        // TODO
         return "";
     }
 
@@ -405,13 +459,12 @@ public class WebActivity extends AppCompatActivity
             Toast.makeText(WebActivity.this, getString(R.string.action_ok), Toast.LENGTH_SHORT).show();
             logoutUser();
         }
-
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
-    private void getUserData() {
+    private void getUserData(String token) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         // set your desired log level
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -425,11 +478,18 @@ public class WebActivity extends AppCompatActivity
                 .create();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(SERVER_URL) // Адрес сервера
+                .baseUrl(ReservedName.SERVER_URL) // Адрес сервера
                 .addConverterFactory(GsonConverterFactory.create(gson)) // говорим ретрофиту что для сериализации необходимо использовать GSON
                 .client(httpClient.build())
                 .build();
 
+        try {
+            if (!token.isEmpty()) {
+                enterToken = token;
+            }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
 
         Server service = retrofit.create(Server.class);
         Call<UserModel> call = service.getUserData("Bearer " + enterToken);
@@ -441,7 +501,8 @@ public class WebActivity extends AppCompatActivity
 
                     loginUser = new UserModel(response.body().getFull_name(),
                             response.body().getEmail(), response.body().getAvatar(),
-                            response.body().getGender());
+                            response.body().getGender(), response.body().getLink(), enterToken);
+                    saveUserToken(enterToken);
                     dataMaster.insertDataOnDB(loginUser);
 
                     initializeView();
@@ -451,6 +512,7 @@ public class WebActivity extends AppCompatActivity
                 } else {
                     // сервер вернул ошибку
                     Log.d(LOG_TAG, "getUserData " + String.valueOf(response.code()));
+
                 }
             }
 
@@ -492,7 +554,7 @@ public class WebActivity extends AppCompatActivity
                 .create();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(SERVER_URL) // Адрес сервера
+                .baseUrl(ReservedName.SERVER_URL) // Адрес сервера
                 .addConverterFactory(GsonConverterFactory.create(gson)) // говорим ретрофиту что для сериализации необходимо использовать GSON
                 .client(httpClient.build())
                 .build();
@@ -523,9 +585,13 @@ public class WebActivity extends AppCompatActivity
             });
         }
 
-        File file = new File("/data/data/" + ReservedName.APP_PACKAGE_NAME + "/shared_prefs/token.xml");
-        file.delete();
+        File shPref = new File("/data/data/" + ReservedName.APP_PACKAGE_NAME + "/shared_prefs/token.xml");
+        File db = new File("/data/data/" + ReservedName.APP_PACKAGE_NAME + "/databases/fillip_app_db");
+        db.delete();
+        shPref.delete();
+
         WebStorage.getInstance().deleteAllData();
+
         Intent i = new Intent(WebActivity.this, LoginActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(i);
@@ -538,7 +604,7 @@ public class WebActivity extends AppCompatActivity
     }
 
     public class MyWebViewClient extends WebViewClient {
-        private static final String URL = "www.taxiservice-gronau.de";
+        private static final String URL = ReservedName.SERVER_URL;
 
 
         @Override
@@ -563,10 +629,48 @@ public class WebActivity extends AppCompatActivity
                     q.printStackTrace();
                 }
                 return true;
-            } else if (url.startsWith("https://t.me/share/url?url=http://taxiservice-gronau.de")) {
+            } else if (url.startsWith("https://t.me/share/url?url=" + URL)) {
                 Toast.makeText(getApplicationContext(), getString(R.string.app_not_install), Toast.LENGTH_SHORT).show();
                 return true;
+            } else if (url.contains("maps")) {
+                Uri gmmIntentUri = Uri.parse(url);
+                Intent mapIntent = new Intent(Intent.ACTION_VIEW, gmmIntentUri);
+                mapIntent.setPackage("com.google.android.apps.maps");
+                if (mapIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivity(mapIntent);
+                    return true;
+                }
+                return false;
+            } else if (url.contains("/switch")) {
+                String[] var = url.split("/");
+                String id = var[var.length - 2];
+                String token = "";
+                boolean userFound = false;
+                try {
+                    ArrayList<UserModel> users = dataMaster.getUserFromDB();
+                    for (UserModel u : users) {
+                        if (u.getLink().equals(id)) {
+                            token = u.getToken();
+                            saveUserToken(token);
+                            enterToken = token;
+                            userFound = true;
+                        }
+                    }
+                } catch (NullPointerException e) {
+                    getNewToken(id);
+                }
+                if (!userFound) {
+                    getNewToken(id);
+                } else {
+                    getUserData(enterToken);
+                }
+
+                return super.shouldOverrideUrlLoading(view, url);
+            } else if (!url.contains(ReservedName.SERVER_URL)) {
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                startActivity(browserIntent);
             }
+
             if (Uri.parse(url).getHost().equals(URL)) {
                 // This is my web site, so do not override; let my WebView load the page
                 return super.shouldOverrideUrlLoading(view, url);
@@ -592,6 +696,62 @@ public class WebActivity extends AppCompatActivity
             Log.d(LOG_TAG, "onPageStarted");
 
         }
+
+    }
+
+    public void saveUserToken(String token) {
+        preferences = getSharedPreferences(ReservedName.USER_TOKEN_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString(ReservedName.USER_TOKEN_NAME, token);
+        editor.commit();
+
+        Log.d(LOG_TAG, "saveNewToken()");
+    }
+
+
+    private void getNewToken(String id) {
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        // set your desired log level
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+        OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+        // add your other interceptors …
+        // add logging as last interceptor
+        httpClient.addInterceptor(logging); // <-- this is the important line!
+
+        final Gson gson = new GsonBuilder()
+                .setLenient()
+                .create();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(ReservedName.SERVER_URL) // Адрес сервера
+                .addConverterFactory(GsonConverterFactory.create(gson)) // говорим ретрофиту что для сериализации необходимо использовать GSON
+                .client(httpClient.build())
+                .build();
+
+        Server service = retrofit.create(Server.class);
+        Call<TokenModel> call = service.getTokenByID("Bearer " + enterToken, id);
+        call.enqueue(new Callback<TokenModel>() {
+            @Override
+            public void onResponse(Call<TokenModel> call, Response<TokenModel> response) {
+                if (response.isSuccessful()) {
+                    // запрос выполнился успешно, сервер вернул Status 200
+                    getUserData(response.body().getToken());
+
+                    Log.d(LOG_TAG, " getNewToken " + response.code());
+
+                } else {
+                    // сервер вернул ошибку
+                    Log.d(LOG_TAG, " getNewToken " + String.valueOf(response.code()));
+                }
+
+            }
+
+            @Override
+            public void onFailure(Call<TokenModel> call, Throwable t) {
+                // ошибка во время выполнения запроса
+                Log.d(LOG_TAG, " getNewToken " + t.getMessage());
+            }
+        });
 
     }
 

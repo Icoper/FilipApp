@@ -4,17 +4,20 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 
 import android.os.Bundle;
-import android.util.Base64;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
@@ -24,25 +27,15 @@ import android.widget.Toast;
 import com.example.dmitriysamoilov.filipapp.R;
 import com.example.dmitriysamoilov.filipapp.ReservedName;
 import com.example.dmitriysamoilov.filipapp.api.Server;
-import com.example.dmitriysamoilov.filipapp.database.BaseDataMaster;
 import com.example.dmitriysamoilov.filipapp.model.SendUserData;
 import com.example.dmitriysamoilov.filipapp.model.UserModel;
-import com.example.dmitriysamoilov.filipapp.util.EnCryptor;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
-import java.security.UnrecoverableEntryException;
+import java.util.ArrayList;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.KeyGenerator;
 
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -56,9 +49,10 @@ import retrofit2.converter.gson.GsonConverterFactory;
  * A login screen that offers login via email/password.
  */
 public class LoginActivity extends AppCompatActivity implements OnClickListener {
-    private static final String SERVER_URL = "http://taxiservice-gronau.de";
     private static final String LOG_TAG = "LoginActivity";
     private static final String SAMPLE_ALIAS = "MYALIAS";
+    private static final String FORGOT_PASS_URL = "https://www.qongs.com/password/reset";
+    private static final String REGISTR_URL = "https://www.qongs.com/register";
 
     private String token;
     private SharedPreferences preferences;
@@ -66,6 +60,8 @@ public class LoginActivity extends AppCompatActivity implements OnClickListener 
 
 
     // UI references.
+    private WebView mWebView;
+    private ProgressBar wVProgressBar;
     private EditText mEmailView;
     private EditText mPasswordView;
     private ProgressBar progressBar;
@@ -91,7 +87,7 @@ public class LoginActivity extends AppCompatActivity implements OnClickListener 
                 .create();
 
         retrofit = new Retrofit.Builder()
-                .baseUrl(SERVER_URL) // Адрес сервера
+                .baseUrl(ReservedName.SERVER_URL) // Адрес сервера
                 .addConverterFactory(GsonConverterFactory.create(gson)) // говорим ретрофиту что для сериализации необходимо использовать GSON
                 .client(httpClient.build())
                 .build();
@@ -173,8 +169,6 @@ public class LoginActivity extends AppCompatActivity implements OnClickListener 
                     token = response.body().getAccess_token();
                     progressBar.setVisibility(View.INVISIBLE);
 
-//                    getUserData(token);
-
                     startWebActivity();
 
                 } else {
@@ -200,32 +194,12 @@ public class LoginActivity extends AppCompatActivity implements OnClickListener 
 
     }
 
-    private void getUserData(String token) {
-
-
-        Server service = retrofit.create(Server.class);
-        Call<UserModel> call = service.getUserData("Bearer " + token);
-        call.enqueue(new Callback<UserModel>() {
-            @Override
-            public void onResponse(Call<UserModel> call, Response<UserModel> response) {
-                if (response.isSuccessful()) {
-                    // запрос выполнился успешно, сервер вернул Status 200
-                    Log.d(LOG_TAG, "getUserData" + String.valueOf(response.code()));
-
-                } else {
-                    // сервер вернул ошибку
-                    Log.d(LOG_TAG, "getUserData" + String.valueOf(response.code()));
-                }
-            }
-
-            @Override
-            public void onFailure(Call<UserModel> call, Throwable t) {
-                // ошибка во время выполнения запроса
-                Log.d(LOG_TAG, "getUserData" + t.getMessage());
-            }
-        });
-
-
+    private void startWebActivityByUrl(String url) {
+        setContentView(R.layout.activity_login_webview);
+        mWebView = (WebView) findViewById(R.id.alwv_web_view);
+        wVProgressBar = (ProgressBar) findViewById(R.id.alwv_progress);
+        mWebView.setWebViewClient(new MyWebViewClient());
+        mWebView.loadUrl(url);
     }
 
     private void startWebActivity() {
@@ -239,30 +213,25 @@ public class LoginActivity extends AppCompatActivity implements OnClickListener 
     }
 
     private String encryptText(String s) {
-
-        EnCryptor encryptor = new EnCryptor();
-
+        KeyGenerator keyGen = null;
         try {
-            final byte[] encryptedText = encryptor
-                    .encryptText(SAMPLE_ALIAS, s);
-            return (Base64.encodeToString(encryptedText, Base64.DEFAULT));
-        } catch (UnrecoverableEntryException | NoSuchAlgorithmException | NoSuchProviderException |
-                KeyStoreException | IOException | NoSuchPaddingException | InvalidKeyException e) {
-            Log.e(LOG_TAG, "onClick() called with: " + e.getMessage(), e);
-        } catch (InvalidAlgorithmParameterException | SignatureException |
-                IllegalBlockSizeException | BadPaddingException e) {
+            keyGen = KeyGenerator.getInstance("AES");
+            Log.d(LOG_TAG, "keyGenerator " + keyGen);
+        } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-        return "";
+        keyGen.init(128);
+
+        return s;
     }
 
     public void saveUserToken(String token) {
         preferences = getSharedPreferences(ReservedName.USER_TOKEN_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
 
-//        String key = encryptText(token);
+        String key = encryptText(token);
 
-        editor.putString(ReservedName.USER_TOKEN_NAME, token);
+        editor.putString(ReservedName.USER_TOKEN_NAME, key);
         editor.commit();
 
         Log.d(LOG_TAG, "saveNewToken()");
@@ -296,11 +265,40 @@ public class LoginActivity extends AppCompatActivity implements OnClickListener 
                 }
                 break;
             case R.id.forgot_pass_tv:
-                Toast.makeText(getApplicationContext(), "In develop", Toast.LENGTH_SHORT).show();
+                startWebActivityByUrl(FORGOT_PASS_URL);
                 break;
             case R.id.registration_button:
-                Toast.makeText(getApplicationContext(), "In develop", Toast.LENGTH_SHORT).show();
+                startWebActivityByUrl(REGISTR_URL);
                 break;
+
+        }
+
+    }
+
+    public class MyWebViewClient extends WebViewClient {
+
+
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            Log.d(LOG_TAG, "shouldOverrideUrlLoading: " + url);
+            if (url.contains("/api/enter")) {
+                mWebView.stopLoading();
+                setContentView(R.layout.activity_login);
+
+            }
+            return super.shouldOverrideUrlLoading(view, url);
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            wVProgressBar.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            super.onPageStarted(view, url, favicon);
+            Log.d(LOG_TAG, "onPageStarted");
 
         }
 

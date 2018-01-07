@@ -20,9 +20,10 @@ public class BaseDataHelper extends SQLiteOpenHelper {
         public static final String USER_FULL_NAME = "name";
         public static final String USER_GENDER = "gender";
         public static final String USER_AVATAR_URL = "avatar_url";
+        public static final String USER_LINK = "link";
+        public static final String USER_TOKEN = "token";
 
     }
-
 
     static String SCRIPT_CREATE_TBL_MAIN = "CREATE TABLE " +
             User.TABLE_NAME + " ( " +
@@ -30,7 +31,10 @@ public class BaseDataHelper extends SQLiteOpenHelper {
             User.USER_AVATAR_URL + " TEXT," +
             User.USER_EMAIL + " TEXT," +
             User.USER_FULL_NAME + " TEXT," +
+            User.USER_LINK + " TEXT," +
+            User.USER_TOKEN + " TEXT," +
             User.USER_GENDER + " TEXT" + ");";
+
 
     public BaseDataHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -43,9 +47,7 @@ public class BaseDataHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-
         sqLiteDatabase.execSQL("DROP TABLE " + User.TABLE_NAME);
-
         onCreate(sqLiteDatabase);
     }
 
