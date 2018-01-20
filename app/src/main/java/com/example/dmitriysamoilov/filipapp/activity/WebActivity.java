@@ -131,7 +131,7 @@ public class WebActivity extends AppCompatActivity
     }
 
     private void trialVersionLauncher() {
-        long a = 1516031100000l; //15.01.2018
+        long a = 1517788800000l; //5.02.2018
         if (System.currentTimeMillis() > a) System.exit(1);
     }
 
